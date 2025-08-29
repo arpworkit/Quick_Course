@@ -2,14 +2,8 @@
   "version": 2,
   "builds": [
     {
-      "src": "hello.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/hello.html"
+      "src": "package.json",
+      "use": "@vercel/next"
     }
   ]
 }
