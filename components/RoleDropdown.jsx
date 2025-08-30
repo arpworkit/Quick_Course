@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const roles = ['Author', 'Student'];
+const roles = ['Author', 'Student', 'Admin'];
 
 export default function RoleDropdown({
   label,

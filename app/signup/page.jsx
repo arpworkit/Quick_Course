@@ -27,10 +27,53 @@ export default function SignUp() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token in localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirect based on role
+        const userRole = data.user.role || formData.role;
+        switch(userRole) {
+          case 'Student':
+            window.location.href = '/student-dashboard';
+            break;
+          case 'Author':
+            window.location.href = '/author-dashboard';
+            break;
+          case 'Admin':
+            window.location.href = '/admin-dashboard';
+            break;
+          default:
+            window.location.href = '/student-dashboard';
+        }
+      } else {
+        setError(data.error || 'Signup failed');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,6 +85,19 @@ export default function SignUp() {
           <div className="signup-header">
             <h1 className="signup-title">Create your account</h1>
           </div>
+
+          {error && (
+            <div style={{ 
+              background: '#fee', 
+              color: '#c33', 
+              padding: '12px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              textAlign: 'center'
+            }}>
+              {error}
+            </div>
+          )}
 
           <form className="signup-form" onSubmit={handleSubmit}>
             <TextInput 
@@ -106,8 +162,13 @@ export default function SignUp() {
               onChange={(value) => handleInputChange('role', value)}
             />
             
-            <Button variant="primary" className="signup-submit-button">
-              Create account
+            <Button 
+              variant="primary" 
+              className="signup-submit-button"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
 
@@ -123,7 +184,7 @@ export default function SignUp() {
       </main>
 
       <footer className="signup-page-footer">
-        <p className="footer-text">© 2024 Rezoomex - All Rights Reserved.</p>
+        <p className="footer-text">© 2024 Quick Course- All Rights Reserved.</p>
       </footer>
     </div>
   );

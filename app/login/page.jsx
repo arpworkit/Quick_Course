@@ -1,11 +1,75 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Button from '../../components/Button';
 import Header from '../../components/Header';
 import TextInput from '../../components/TextInput';
 import Dropdown from '../../components/Dropdown';
+import RoleDropdown from '../../components/RoleDropdown';
 
 export default function Login() {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    role: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token in localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Redirect based on role
+        const userRole = data.user.role || formData.role;
+        switch(userRole) {
+          case 'Student':
+            window.location.href = '/student-dashboard';
+            break;
+          case 'Author':
+            window.location.href = '/author-dashboard';
+            break;
+          case 'Admin':
+            window.location.href = '/admin-dashboard';
+            break;
+          default:
+            window.location.href = '/student-dashboard';
+        }
+      } else {
+        setError(data.error || 'Login failed');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="login-container">
       <Header />
@@ -45,28 +109,55 @@ export default function Login() {
             </p>
           </div>
 
-          <form className="login-form">
+          {error && (
+            <div style={{ 
+              background: '#fee', 
+              color: '#c33', 
+              padding: '12px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              textAlign: 'center'
+            }}>
+              {error}
+            </div>
+          )}
+
+          <form className="login-form" onSubmit={handleSubmit}>
             <TextInput 
               label="Email address"
-              placeholder="Enter your email"
               type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              required
+              placeholder="Enter your email"
             />
             
-            <TextInput 
+            <TextInput
               label="Password"
               placeholder="Enter your password"
               type="password"
+              value={formData.password}
+              onChange={(e) => handleInputChange('password', e.target.value)}
+              required
               helperText="Forgot Password?"
               helperLink={true}
             />
-            
-            <Dropdown 
-              label="Login as"
+
+            <RoleDropdown
+              label="Role"
               placeholder="Select your role"
+              value={formData.role}
+              onChange={(value) => handleInputChange('role', value)}
+              required
             />
-            
-            <Button variant="primary" className="login-button">
-              Log In
+
+            <Button 
+              variant="primary" 
+              className="login-button"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Logging in...' : 'Log In'}
             </Button>
           </form>
 
